@@ -7,16 +7,16 @@ export async function createUserTable() {
     id UUID DEFAULT gen_random_UUID() PRIMARY KEY,
     name VARCHAR(100) NOT NULL CHECK(char_length(name)>=3),
     password TEXT NOT NULL,
-    role VARCHAR(10) DEFAULT 'User CHECK (role IN('USER',ADMIN)),
+    role VARCHAR(10) DEFAULT 'User' CHECK (role IN('USER','ADMIN')),
     avatar JSONB DEFAULT NULL,
     reset_password_token TEXT DEFAULT NULL,
     reset_password_expire TIMESTAMP DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
+    );
     `;
     await database.query(query);
   } catch (error) {
-    console.error("Error creating user table:", error);
+    console.error("❌ Failed To Create Users Table.", error);
     process.exit(1);
   }
 }
