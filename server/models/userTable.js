@@ -6,8 +6,9 @@ export async function createUserTable() {
     CREATE TABLE IF NOT EXISTS users(
     id UUID DEFAULT gen_random_UUID() PRIMARY KEY,
     name VARCHAR(100) NOT NULL CHECK(char_length(name)>=3),
+    email VARCHAR(100) NOT NULL CHECK(char_length(name)>=3),
     password TEXT NOT NULL,
-    role VARCHAR(10) DEFAULT 'User' CHECK (role IN('USER','ADMIN')),
+    role VARCHAR(10) DEFAULT 'USER' CHECK (role IN('USER','ADMIN')),
     avatar JSONB DEFAULT NULL,
     reset_password_token TEXT DEFAULT NULL,
     reset_password_expire TIMESTAMP DEFAULT NULL,

@@ -4,9 +4,9 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import fileUpload from "express-fileupload";
 import { createTables } from "./utils/createTables.js";
-import { errorMiddleware } from "./middlewares/errorMiddlewares.js";
-// import { errorHandler } from "./middlewares/error.middlewares.js";
-i;
+// import { errorMiddleware } from "./middlewares/errorMiddlewares.js";
+import authRouter from "./routes/authRouter.js";
+import { errorHandler } from "./middlewares/error.middlewares.js";
 
 const app = express();
 
@@ -39,7 +39,10 @@ createTables()
     console.error("Failed to set up database tables:", err);
   });
 
-app.use(errorMiddleware);
-// app.use(errorHandler)
+// routes
+app.use("/api/v1/auth", authRouter);
+
+// app.use(errorMiddleware);
+app.use(errorHandler);
 
 export default app;
