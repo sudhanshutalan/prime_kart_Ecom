@@ -3,6 +3,7 @@ import { config } from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import fileUpload from "express-fileupload";
+import { createTables } from "./utils/createTables.js";
 
 const app = express();
 
@@ -26,5 +27,13 @@ app.use(
     useTempFiles: true,
   })
 );
+
+createTables()
+  .then(() => {
+    console.log("Database tables are set up.");
+  })
+  .catch((err) => {
+    console.error("Failed to set up database tables:", err);
+  });
 
 export default app;
