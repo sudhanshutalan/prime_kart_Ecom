@@ -4,6 +4,9 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import fileUpload from "express-fileupload";
 import { createTables } from "./utils/createTables.js";
+import { errorMiddleware } from "./middlewares/errorMiddlewares.js";
+// import { errorHandler } from "./middlewares/error.middlewares.js";
+i;
 
 const app = express();
 
@@ -35,5 +38,8 @@ createTables()
   .catch((err) => {
     console.error("Failed to set up database tables:", err);
   });
+
+app.use(errorMiddleware);
+// app.use(errorHandler)
 
 export default app;
