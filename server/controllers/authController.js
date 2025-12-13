@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import bcrypt from "bcrypt";
 import database from "../db/db.js";
-import { sendToken } from "../utils/jwtToken.js";
+import { generateAccessToken, getCookieOptions } from "../utils/jwtToken.js";
 
 export const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
@@ -23,11 +23,29 @@ export const registerUser = asyncHandler(async (req, res) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const user = await database.query(
+  const dbuser = await database.query(
     "INSERT INTO users(name,email,password) VALUES ($1,$2,$3) RETURNING *",
     [name, email, hashedPassword]
   );
-  sendToken(user.rows[0], 201, "User registered successfully", res);
+  const user = dbuser.rows[0];
+  const token = generateAccessToken(user);
+
+  const {
+    password: _,
+    reset_password_token,
+    reset_password_expire,
+    ...sanitizedUser
+  } = user;
+  res
+    .status(200)
+    .cookie("token", token, getCookieOptions())
+    .json(
+      new ApiResponse(
+        200,
+        { user: sanitizedUser, token },
+        "user registered successfully"
+      )
+    );
 });
 
 export const loginUser = asyncHandler(async (req, res) => {
@@ -54,22 +72,45 @@ export const loginUser = asyncHandler(async (req, res) => {
   if (!isPasswordCorrect) {
     throw new ApiError(400, "Invalid credentials");
   }
-  sendToken(isUserExist.rows[0], 200, "User logged in successfully", res);
+  const user = isUserExist.rows[0];
+  const token = generateAccessToken(user);
+  const {
+    password: _,
+    reset_password_token,
+    reset_password_expire,
+    ...sanitizedUser
+  } = user;
+
+  return res
+    .status(200)
+    .cookie("token", token, getCookieOptions())
+    .json(
+      new ApiResponse(
+        200,
+        { user: sanitizedUser, token },
+        "user logged in successfully"
+      )
+    );
 });
 
 export const getloggedInUser = asyncHandler(async (req, res) => {
   const { user } = req;
+  const {
+    password: _,
+    reset_password_token,
+    reset_password_expire,
+    ...sanitizedUser
+  } = user;
   return res
     .status(200)
-    .json(new ApiResponse(200, user, "user fetched successfully"));
+    .json(
+      new ApiResponse(200, { user: sanitizedUser }, "user fetched successfully")
+    );
 });
 
 export const logoutUser = asyncHandler(async (req, res) => {
   res
     .status(200)
-    .cookie("token", null, {
-      expires: new Date(Date.now()),
-      httpOnly: true,
-    })
+    .clearCookie("token", getCookieOptions())
     .json(new ApiResponse(200, null, "user logged out successfully"));
 });
