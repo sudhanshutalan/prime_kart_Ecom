@@ -9,6 +9,7 @@ import {
   generateResetPasswordToken,
 } from "../utils/generateResetPasswordToken.js";
 import { sendEmail } from "../utils/sendEmail.js";
+import crypto from "crypto";
 
 export const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
@@ -120,7 +121,7 @@ export const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, null, "user logged out successfully"));
 });
 
-export const forgotPassword = asyncHandler(async (req, res, next) => {
+export const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
   const { frontendUrl } = req.query;
 
@@ -165,3 +166,54 @@ export const forgotPassword = asyncHandler(async (req, res, next) => {
     throw new ApiError(400, "Error occured while sending email", error);
   }
 });
+
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { token } = req.params;
+  const { password, confirmPassword } = req.body;
+
+  if (!token) {
+    throw new ApiError(400, "Invalid or expired reset password token");
+  }
+  if (!password || !confirmPassword) {
+    throw new ApiError(400, "password and confirm password is required");
+  }
+  if (password !== confirmPassword) {
+    throw new ApiError(400, "password and confirm password should match");
+  }
+  if (password.length < 8 || password.length > 16) {
+    throw new ApiError(
+      400,
+      "password and confirm password length should between between 8 to 16 characters"
+    );
+  }
+  const resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
+
+  const user = await database.query(
+    "SELECT * FROM users WHERE reset_password_token =$1 AND reset_password_expire > NOW()",
+    [resetPasswordToken]
+  );
+
+  if (user.rows.length === 0) {
+    throw new ApiError(400, "Invalid or expired reset password token");
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  await database.query(
+    "UPDATE users SET password = $1, reset_password_token=NULL, reset_password_expire = NULL WHERE reset_password_token = $2 RETURNING *",
+    [hashedPassword, resetPasswordToken]
+  );
+
+  res.status(200).json(new ApiResponse(200, {}, "password reset successfull"));
+});
+
+// export const updatePassword = asyncHandler(async (req, res) => {
+//   const { currentPassword, newPassword, confirmNewPassword } = req.body;
+
+//   if (!currentPassword) {
+//     throw new ApiError(400, "oldPassword is required");
+//   }
+// });
