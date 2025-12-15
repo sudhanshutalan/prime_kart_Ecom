@@ -210,10 +210,40 @@ export const resetPassword = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, {}, "password reset successfull"));
 });
 
-// export const updatePassword = asyncHandler(async (req, res) => {
-//   const { currentPassword, newPassword, confirmNewPassword } = req.body;
+export const updatePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword, confirmNewPassword } = req.body;
 
-//   if (!currentPassword) {
-//     throw new ApiError(400, "oldPassword is required");
-//   }
-// });
+  if (!currentPassword || !newPassword || !confirmNewPassword) {
+    throw new ApiError(400, "all fields are required");
+  }
+
+  const isPasswordCorrect = await bcrypt.compare(
+    currentPassword,
+    req.user?.password
+  );
+
+  if (!isPasswordCorrect) {
+    throw new ApiError("Incorrect current password");
+  }
+
+  if (newPassword.length < 8 || newPassword.length > 16) {
+    throw new ApiError(
+      400,
+      " new password length should be between 8 to 16 characters"
+    );
+  }
+  if (newPassword !== confirmNewPassword) {
+    throw new ApiError(400, "new password and confirm password should match");
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await database.query(
+    "UPDATE users SET password = $1 WHERE id = $2 RETURNING*",
+    [hashedPassword, req.user?.id]
+  );
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, {}, "password updated successfully"));
+});

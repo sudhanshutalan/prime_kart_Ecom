@@ -6,6 +6,7 @@ import {
   logoutUser,
   registerUser,
   resetPassword,
+  updatePassword,
 } from "../controllers/authController.js";
 import { isAuthenticated } from "../middlewares/authMiddleware.js";
 
@@ -17,5 +18,6 @@ router.get("/getUser", isAuthenticated, getloggedInUser);
 router.get("/logout", isAuthenticated, logoutUser);
 router.post("/forgot-password", forgotPassword);
 router.put("/reset-password/:token", resetPassword);
+router.put("/update-password", isAuthenticated, updatePassword);
 
 export default router;
