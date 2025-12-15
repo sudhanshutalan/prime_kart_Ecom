@@ -4,9 +4,11 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import fileUpload from "express-fileupload";
 import { createTables } from "./utils/createTables.js";
-// import { errorMiddleware } from "./middlewares/errorMiddlewares.js";
-import authRouter from "./routes/authRouter.js";
 import { errorHandler } from "./middlewares/error.middlewares.js";
+
+//route imports
+import authRouter from "./routes/authRouter.js";
+import productRouter from "./routes/productRouter.js";
 
 const app = express();
 
@@ -41,6 +43,7 @@ createTables()
 
 // routes
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/products", productRouter);
 
 // app.use(errorMiddleware);
 app.use(errorHandler);
