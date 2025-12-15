@@ -10,6 +10,7 @@ import {
 } from "../utils/generateResetPasswordToken.js";
 import { sendEmail } from "../utils/sendEmail.js";
 import crypto from "crypto";
+import { v2 as cloudinary } from "cloudinary";
 
 export const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
@@ -246,4 +247,58 @@ export const updatePassword = asyncHandler(async (req, res) => {
   res
     .status(200)
     .json(new ApiResponse(200, {}, "password updated successfully"));
+});
+
+export const updateProfile = asyncHandler(async (req, res) => {
+  const { name } = req.body;
+  if (!name) {
+    throw new ApiError(400, "name is required");
+  }
+  if (name.trim().length === 0) {
+    throw new ApiError(400, "name cannot be empty");
+  }
+
+  let avatarData = {};
+  if (req.files && req.files.avatar) {
+    const { avatar } = req.files;
+    if (req.user?.avatar?.public_id) {
+      await cloudinary.uploader.destroy(req.user?.avatar?.public_id);
+    }
+
+    const newProfileImage = await cloudinary.uploader.upload(
+      avatar.tempFilePath,
+      {
+        folder: "Ecom_avatars",
+        width: 150,
+        crop: "scale",
+      }
+    );
+    avatarData = {
+      public_id: newProfileImage.public_id,
+      url: newProfileImage.secure_url,
+    };
+  }
+
+  let user;
+  if (Object.keys(avatarData).length === 0) {
+    user = await database.query(
+      `UPDATE users SET name = $1 WHERE id=$2 RETURNING*`,
+      [name, req.user?.id]
+    );
+  } else {
+    user = await database.query(
+      `UPDATE users SET name = $1, avatar = $2 WHERE id = $3 RETURNING*`,
+      [name, avatarData, req.user?.id]
+    );
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { user: user.rows[0] },
+        "profile updated successfully"
+      )
+    );
 });
