@@ -180,3 +180,83 @@ export const fetchAllProducts = asyncHandler(async (req, res) => {
     )
   );
 });
+
+export const updateProducts = asyncHandler(async (req, res) => {
+  const { productId } = req.params;
+  const { name, description, price, category, stock } = req.body;
+  if (!productId) {
+    throw new ApiError(400, "Either invalid or missing product id");
+  }
+
+  const product = await database.query(`SELECT * FROM products WHERE id = $1`, [
+    productId,
+  ]);
+
+  if (product.rows.length === 0) {
+    throw new ApiError(400, "product not exists");
+  }
+
+  const result = await database.query(
+    `UPDATE products SET name = $1, description = $2, price = $3, category = $4, stock =$5 WHERE id = $6 RETURNING*`,
+    [name, description, price, category, stock, productId]
+  );
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { product: result.rows[0] },
+        "product updated successfull"
+      )
+    );
+});
+
+export const deleteProducts = asyncHandler(async (req, res) => {
+  const { productId } = req.params;
+
+  const product = await database.query("SELECT * FROM products WHERE id = $1", [
+    productId,
+  ]);
+
+  if (product.rows.length === 0) {
+    throw new ApiError(400, "product does not exists");
+  }
+
+  const images = product.rows[0].images;
+
+  const deletedProduct = await database.query(
+    "DELETE FROM products where id = $1",
+    [productId]
+  );
+
+  if (deleteProducts.rows === 0) {
+    throw new ApiError(
+      400,
+      "Either product not exists or failed to delete the product"
+    );
+  }
+
+  //delete cloudinary images
+  try {
+    if (images && images.length > 0) {
+      for (const image of images) {
+        if (image.public_id) {
+          await cloudinary.uploader.destroy(image.public_id);
+        }
+      }
+    }
+  } catch (error) {
+    throw new ApiError(500, "failed to delete cloudinary images");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { deletedProduct: deletedProduct.rows[0] },
+        "product deleted successfully"
+      )
+    );
+});
