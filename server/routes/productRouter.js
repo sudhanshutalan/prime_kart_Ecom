@@ -3,6 +3,8 @@ import {
   createProducts,
   deleteProducts,
   fetchAllProducts,
+  fetchSingleProduct,
+  postProductReview,
   updateProducts,
 } from "../controllers/productController.js";
 import {
@@ -31,4 +33,9 @@ router.delete(
   authorizedRoles("ADMIN"),
   deleteProducts
 );
+
+router.get("/fetchSingleProduct/:productId", fetchSingleProduct);
+
+router.put("/postProductReview/:productId", isAuthenticated, postProductReview);
+
 export default router;
