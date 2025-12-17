@@ -375,3 +375,34 @@ export const postProductReview = asyncHandler(async (req, res) => {
     )
   );
 });
+
+export const deleteProductReview = asyncHandler(async (req, res) => {
+  const { productId } = req.params;
+
+  const deletedReview = await database.query(
+    `DELETE FROM reviews WHERE product_id = $1 AND user_id = $2 RETURNING*`,
+    [productId, req.user.id]
+  );
+
+  if (deletedReview.rows.length == 0) {
+    throw new ApiError(400, "Either review not exists or invalid product id");
+  }
+
+  const allReviews = await database.query(
+    `SELECT AVG(rating) AS avg_rating FROM reviews WHERE product_id = $1`,
+    [productId]
+  );
+
+  const newAvgRating = allReviews.rows[0].avg_rating;
+
+  await database.query(
+    `UPDATE products SET ratings = $1 WHERE id = $2 RETURNING*`,
+    [newAvgRating, productId]
+  );
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, deletedReview.rows[0], "review deleted successfully")
+    );
+});

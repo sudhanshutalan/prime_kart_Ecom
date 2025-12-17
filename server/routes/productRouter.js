@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createProducts,
+  deleteProductReview,
   deleteProducts,
   fetchAllProducts,
   fetchSingleProduct,
@@ -37,5 +38,11 @@ router.delete(
 router.get("/fetchSingleProduct/:productId", fetchSingleProduct);
 
 router.put("/postProductReview/:productId", isAuthenticated, postProductReview);
+
+router.delete(
+  "/deleteReviews/:productId",
+  isAuthenticated,
+  deleteProductReview
+);
 
 export default router;
