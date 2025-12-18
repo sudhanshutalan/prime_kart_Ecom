@@ -3,6 +3,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import database from "../db/db.js";
 import { v2 as cloudinary } from "cloudinary";
+import { getAIRecommendation } from "../utils/getAIRecommendation.js";
 
 export const createProducts = asyncHandler(async (req, res) => {
   const { name, description, price, category, stock } = req.body;
@@ -302,7 +303,7 @@ export const postProductReview = asyncHandler(async (req, res) => {
   const { productId } = req.params;
   const { rating, comment } = req.body;
 
-  if ((!rating, !comment)) {
+  if (!rating || !comment) {
     throw new ApiError(400, "ratings and comment is required ");
   }
 
@@ -405,4 +406,125 @@ export const deleteProductReview = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(200, deletedReview.rows[0], "review deleted successfully")
     );
+});
+
+export const fetchAIFilteredProducts = asyncHandler(async (req, res) => {
+  const { userPrompt } = req.body;
+  if (!userPrompt) {
+    throw new ApiError(400, "provide user prompts");
+  }
+
+  const filterKeywords = (query) => {
+    const stopWords = new Set([
+      "the",
+      "they",
+      "them",
+      "then",
+      "I",
+      "we",
+      "you",
+      "he",
+      "she",
+      "it",
+      "is",
+      "a",
+      "an",
+      "of",
+      "and",
+      "or",
+      "to",
+      "for",
+      "from",
+      "on",
+      "who",
+      "whom",
+      "why",
+      "when",
+      "which",
+      "with",
+      "this",
+      "that",
+      "in",
+      "at",
+      "by",
+      "be",
+      "not",
+      "was",
+      "were",
+      "has",
+      "have",
+      "had",
+      "do",
+      "does",
+      "did",
+      "so",
+      "some",
+      "any",
+      "how",
+      "can",
+      "could",
+      "should",
+      "would",
+      "there",
+      "here",
+      "just",
+      "than",
+      "because",
+      "but",
+      "its",
+      "it's",
+      "if",
+      ".",
+      ",",
+      "!",
+      "?",
+      ">",
+      "<",
+      ";",
+      "`",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+    ]);
+
+    return query
+      .toLowerCase()
+      .replace(/[^\w\s]/g, "")
+      .split(/\s+/)
+      .filter((word) => !stopWords.has(word))
+      .map((word) => `%${word}%`);
+  };
+
+  const keywords = filterKeywords(userPrompt);
+
+  //BASIC SQL FILTER
+  const result = await database.query(
+    `SELECT * FROM products WHERE name ILIKE ANY($1) OR description ILIKE ANY($1) OR category ILIKE ANY($1) LIMIT 200`,
+    [keywords]
+  );
+
+  const filteredProducts = result.rows;
+
+  if (filteredProducts.length === 0) {
+    throw new ApiError(400, "no products found matching your prompt");
+  }
+
+  //STEP 2 : AI FILTERING
+  const { success, products } = await getAIRecommendation(
+    req,
+    res,
+    userPrompt,
+    filteredProducts
+  );
+
+  return res
+    .status(200)
+    .json({ success: success, message: "AI filtered products", products });
 });

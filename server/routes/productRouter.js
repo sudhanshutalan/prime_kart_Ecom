@@ -3,6 +3,7 @@ import {
   createProducts,
   deleteProductReview,
   deleteProducts,
+  fetchAIFilteredProducts,
   fetchAllProducts,
   fetchSingleProduct,
   postProductReview,
@@ -44,5 +45,6 @@ router.delete(
   isAuthenticated,
   deleteProductReview
 );
+router.post("/ai-search", isAuthenticated, fetchAIFilteredProducts);
 
 export default router;
