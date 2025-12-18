@@ -9,6 +9,7 @@ import { errorHandler } from "./middlewares/error.middlewares.js";
 //route imports
 import authRouter from "./routes/authRouter.js";
 import productRouter from "./routes/productRouter.js";
+import adminRouter from "./routes/adminRoutes.js";
 
 const app = express();
 
@@ -44,6 +45,7 @@ createTables()
 // routes
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/products", productRouter);
+app.use("/api/v1/admin", adminRouter);
 
 // app.use(errorMiddleware);
 app.use(errorHandler);
