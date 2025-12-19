@@ -76,25 +76,24 @@ export const dashboardStats = asyncHandler(async (req, res) => {
     0
   );
   const previousMonthStart = new Date(
-    today.getFullYear,
+    today.getFullYear(),
     today.getMonth() - 1,
     1
   );
 
-  const prevoiusMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+  const previousMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
 
   const totalRevenueAllTimeQuery = await database.query(
     `SELECT SUM(total_price) FROM orders`
   );
-  const totalRevenueAllTime = parseFloat(totalRevenueAllTimeQuery.rows[0] || 0);
+  const totalRevenueAllTime = parseFloat(totalRevenueAllTimeQuery.rows[0]) || 0;
 
   //Total Users
-
   const totalUsersQuery = await database.query(
     `SELECT COUNT(*) FROM users WHERE role ILIKE $1`,
     ["user"]
   );
-  const totalUsers = parseInt(totalUsersQuery.rows[0] || 0);
+  const totalUsers = parseInt(totalUsersQuery.rows[0]) || 0;
 
   //Order status Count
   const orderStatusCountsQuery = await database.query(
@@ -129,7 +128,7 @@ export const dashboardStats = asyncHandler(async (req, res) => {
   const monthlySalesQuery = await database.query(
     `SELECT 
     TO_CHAR(created_at, 'Mon YYYY') AS month,
-    DATE_TRUNC('month' creatd_at) AS date,
+    DATE_TRUNC('month' created_at) AS date,
     SUM(total_price) as totalSales,
     FROM orders
     GROUP BY month,date
@@ -162,9 +161,9 @@ export const dashboardStats = asyncHandler(async (req, res) => {
   const currentMonthSalesQuery = await database.query(
     `
     SELECT SUM(total_price) AS total FROM orders
-    WHERE created_at >= $1 AND created_at <(CURRENT_DATE + INTERVAL '30 DAY')
+    WHERE created_at >= $1 AND created_at <=$2
     `,
-    [currentMonthStart]
+    [currentMonthStart, currentMonthEnd]
   );
   const currentMonthSales =
     parseFloat(currentMonthSalesQuery.rows[0].total) || 0;
@@ -179,7 +178,7 @@ export const dashboardStats = asyncHandler(async (req, res) => {
   const lastMonthRevenueQuery = await database.query(
     `
     SELECT SUM(total_price) AS total FROM orders WHERE created_at BETWEEN $1 AND $2`,
-    [previousMonthStart, prevoiusMonthEnd]
+    [previousMonthStart, previousMonthEnd]
   );
   const lastMonthRevenue = parseFloat(lastMonthRevenueQuery.rows[0].total) || 0;
 
