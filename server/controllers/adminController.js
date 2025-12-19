@@ -86,14 +86,15 @@ export const dashboardStats = asyncHandler(async (req, res) => {
   const totalRevenueAllTimeQuery = await database.query(
     `SELECT SUM(total_price) FROM orders`
   );
-  const totalRevenueAllTime = parseFloat(totalRevenueAllTimeQuery.rows[0]) || 0;
+  const totalRevenueAllTime =
+    parseFloat(totalRevenueAllTimeQuery.rows[0].sum) || 0;
 
   //Total Users
   const totalUsersQuery = await database.query(
     `SELECT COUNT(*) FROM users WHERE role ILIKE $1`,
     ["user"]
   );
-  const totalUsers = parseInt(totalUsersQuery.rows[0]) || 0;
+  const totalUsers = parseInt(totalUsersQuery.rows[0].count) || 0;
 
   //Order status Count
   const orderStatusCountsQuery = await database.query(
@@ -115,30 +116,30 @@ export const dashboardStats = asyncHandler(async (req, res) => {
     `SELECT SUM(total_price) FROM orders WHERE created_at::date = $1`,
     [todayDate]
   );
-  const todaysRevenue = parseFloat(todaysRevenueQuery.rows[0]) || 0;
+  const todaysRevenue = parseFloat(todaysRevenueQuery.rows[0].sum) || 0;
 
   // yesterdays Revenue
   const yesterdaysRevenueQuery = await database.query(
     `SELECT SUM(total_price) FROM orders WHERE created_at::date = $1`,
     [yesterdayDate]
   );
-  const yesterdaysRevenue = parseFloat(yesterdaysRevenueQuery.rows[0]) || 0;
+  const yesterdaysRevenue = parseFloat(yesterdaysRevenueQuery.rows[0].sum) || 0;
 
   // MonthlySales FOr lineChart
   const monthlySalesQuery = await database.query(
     `SELECT 
     TO_CHAR(created_at, 'Mon YYYY') AS month,
-    DATE_TRUNC('month' created_at) AS date,
-    SUM(total_price) as totalSales,
+    DATE_TRUNC('month', created_at) AS date,
+    SUM(total_price) as totalSales
     FROM orders
-    GROUP BY month,date
+    GROUP BY month, date
     ORDER BY date ASC
     `
   );
 
   const monthlySales = monthlySalesQuery.rows.map((row) => ({
     month: row.month,
-    totalSales: parseFloat(row.totalSales) || 0,
+    totalSales: parseFloat(row.totalsales) || 0,
   }));
 
   //Top 5 most sold products
@@ -170,14 +171,13 @@ export const dashboardStats = asyncHandler(async (req, res) => {
 
   // product with stock <=5
   const lowStockProductQuery = await database.query(
-    `   SELECT name,stock FROM products WHERE stock <=5`
+    `SELECT name,stock FROM products WHERE stock <=5`
   );
   const lowStockProducts = lowStockProductQuery.rows;
 
   //Revenue Growth Rate
   const lastMonthRevenueQuery = await database.query(
-    `
-    SELECT SUM(total_price) AS total FROM orders WHERE created_at BETWEEN $1 AND $2`,
+    `SELECT SUM(total_price) AS total FROM orders WHERE created_at BETWEEN $1 AND $2`,
     [previousMonthStart, previousMonthEnd]
   );
   const lastMonthRevenue = parseFloat(lastMonthRevenueQuery.rows[0].total) || 0;
@@ -193,8 +193,8 @@ export const dashboardStats = asyncHandler(async (req, res) => {
 
   //new users in current Month
   const newUsersThisMonthQuery = await database.query(
-    `SELECT COUNT(*) FROM users WHERE created_at >=$1`,
-    [currentMonthStart]
+    `SELECT COUNT(*) FROM users WHERE created_at >=$1 AND role ILIKE $2`,
+    [currentMonthStart, "user"]
   );
 
   const newUsersThisMonth = parseInt(newUsersThisMonthQuery.rows[0].count) || 0;
