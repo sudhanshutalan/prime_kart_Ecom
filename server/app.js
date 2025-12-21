@@ -5,13 +5,14 @@ import cors from "cors";
 import fileUpload from "express-fileupload";
 import { createTables } from "./utils/createTables.js";
 import { errorHandler } from "./middlewares/error.middlewares.js";
+import Stripe from "stripe";
+import database from "./db/db.js";
 
 //route imports
 import authRouter from "./routes/authRouter.js";
 import productRouter from "./routes/productRouter.js";
 import adminRouter from "./routes/adminRoutes.js";
-import Stripe from "stripe";
-import database from "./db/db.js";
+import orderRouter from "./routes/orderRoutes.js";
 
 const app = express();
 
@@ -104,6 +105,7 @@ createTables()
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/products", productRouter);
 app.use("/api/v1/admin", adminRouter);
+app.use("/api/v1/orders", orderRouter);
 
 // app.use(errorMiddleware);
 app.use(errorHandler);
