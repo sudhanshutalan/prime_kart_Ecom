@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   toggleSidebar,
   toggleSearchBar,
+  toggleCart,
 } from "../../store/slices/popupSlice.js";
 
 const Navbar = () => {
