@@ -135,6 +135,8 @@ const authSlice = createSlice({
     isLoggingIn: false,
     isUpdatingProfile: false,
     isUpdatingPassword: false,
+    isResettingPassword: false,
+    isLoggingOut: false,
     isRequestingForToken: false,
     isCheckingAuth: true,
   },
@@ -172,7 +174,8 @@ const authSlice = createSlice({
       state.authUser = null;
     });
     builder.addCase(logout.fulfilled, (state) => {
-      state.isLoggingOut = {};
+      state.isLoggingOut = false;
+      state.authUser = null;
     });
     builder.addCase(logout.rejected, (state) => {
       state.isLoggingOut = state.authUser;

@@ -1,6 +1,10 @@
 import { Menu, User, ShoppingCart, Sun, Moon, Search } from "lucide-react";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useDispatch, useSelector } from "react-redux";
+import {
+  toggleSidebar,
+  toggleSearchBar,
+} from "../../store/slices/popupSlice.js";
 
 const Navbar = () => {
   const { theme, toggleTheme } = useTheme();
@@ -44,7 +48,7 @@ const Navbar = () => {
               </button>
               {/* SEARCH OVERLAY */}
               <button
-                onClick={() => dispatch(toggleSearch())}
+                onClick={() => dispatch(toggleSearchBar())}
                 className="p-2 rounded-lg hover:bg-secondary transition-colors"
               >
                 <Search className="w-5 h-5 text-foreground" />
